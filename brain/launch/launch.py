@@ -22,5 +22,8 @@ def launch(package, file, launch_folder="launch", arguments={}):
 
 def generate_launch_description():
     return LaunchDescription(
-        []
+        [
+            launch("teleop", "launch.py"),
+            launch("serial_com", "launch.py")
+        ]
     )
