@@ -8,9 +8,19 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(serial REQUIRED)
+find_package(ackermann_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(cev_msgs REQUIRED)
+
+add_executable(arduino_com src/arduino_com.cpp)
+ament_target_dependencies(arduino_com rclcpp serial ackermann_msgs std_msgs cev_msgs)
+
+install(TARGETS
+  arduino_com
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
@@ -33,4 +43,3 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
-

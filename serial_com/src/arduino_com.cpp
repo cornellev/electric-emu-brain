@@ -11,19 +11,19 @@ public:
     SerialHandlerNode(): Node("serial_handler_node") {
         // Initialize serial port
         try {
-            serial_port_.setPort("/dev/ttyACM0");
+            serial_port_.setPort("/dev/ttyUSB0");
             serial_port_.setBaudrate(115200);
             serial::Timeout timeout = serial::Timeout::simpleTimeout(1000);
             serial_port_.setTimeout(timeout);
             serial_port_.open();
 
             if (serial_port_.isOpen()) {
-                RCLCPP_DEBUG(this->get_logger(), "Serial port initialized successfully.");
+                RCLCPP_INFO(this->get_logger(), "Serial port initialized successfully.");
             } else {
-                RCLCPP_ERROR(this->get_logger(), "Failed to open serial port.");
+                RCLCPP_INFO(this->get_logger(), "Failed to open serial port.");
             }
         } catch (const serial::IOException& e) {
-            RCLCPP_ERROR(this->get_logger(), "Serial port error: %s", e.what());
+            RCLCPP_INFO(this->get_logger(), "Serial port error: %s", e.what());
         }
 
         // Subscribers
@@ -71,24 +71,27 @@ private:
                 // Read a line (until newline character)
                 std::string message = serial_port_.readline();
 
+                RCLCPP_INFO(this->get_logger(), "Raw message received: '%s'", message.c_str());
                 if (!message.empty()) {
-                    RCLCPP_DEBUG(this->get_logger(), "Raw message received: '%s'", message.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Raw message received: '%s'", message.c_str());
 
                     // Parse the received message into reported sensor data
                     if (parseMessage(message)) {
-                        RCLCPP_DEBUG(this->get_logger(),
+                        RCLCPP_INFO(this->get_logger(),
                             "Parsed values - Int: %d, Float1: %f, Float2: %f", reported_timestamp,
-                            reported_velocity, reported_steering_angle);
+                            0.0, reported_steering_angle);
 
                         // Publish the parsed data
                         publishSensorData();
                     } else {
-                        RCLCPP_DEBUG(this->get_logger(), "Failed to parse message: '%s'",
+                        RCLCPP_INFO(this->get_logger(), "Failed to parse message: '%s'",
                             message.c_str());
                     }
+                } else {
+                    RCLCPP_INFO(this->get_logger(), "Message empty.");
                 }
             } catch (const serial::IOException& e) {
-                RCLCPP_ERROR(this->get_logger(), "Serial read error: %s", e.what());
+                RCLCPP_INFO(this->get_logger(), "Serial read error: %s", e.what());
             }
 
             try {
@@ -99,7 +102,7 @@ private:
 
                 // Send the message over the serial port
                 serial_port_.write(serial_message.str());
-                RCLCPP_DEBUG(this->get_logger(), "Serial message sent: '%s'",
+                RCLCPP_INFO(this->get_logger(), "Serial message sent: '%s'",
                     serial_message.str().c_str());
 
             } catch (const serial::IOException& e) {
@@ -120,8 +123,6 @@ private:
 
         try {
             reported_timestamp = std::stoi(message.substr(0, first_space));
-            reported_velocity = std::stof(message.substr(first_space + 1,
-                second_space - first_space - 1));
             reported_steering_angle = std::stof(message.substr(second_space + 1));
             return true;
         } catch (const std::exception& e) {
@@ -139,7 +140,7 @@ private:
 
         sensor_msg.timestamp = current_time_seconds;
         // sensor_msg.timestamp = this->now().nanoseconds() / 1e9;
-        sensor_msg.velocity = reported_velocity;
+        // sensor_msg.velocity = reported_velocity;
         sensor_msg.steering_angle = reported_steering_angle;
 
         sensor_collect_pub_->publish(sensor_msg);  // Publish the message

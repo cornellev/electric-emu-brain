@@ -7,3 +7,6 @@
 [submodule "cev/cev_teleop_ros2"]
 	path = cev/cev_teleop_ros2
 	url = git@github.com:cornellev/cev_teleop_ros2.git
+[submodule "external/serial-ros2"]
+	path = external/serial-ros2
+	url = git@github.com:RoverRobotics-forks/serial-ros2.git
