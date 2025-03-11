@@ -3,10 +3,10 @@
 	url = https://github.com/cornellev/cev_msgs.git
 [submodule "cev/cev-uc-autosteer"]
 	path = cev/cev-uc-autosteer
-	url = git@github.com:cornellev/uc-autosteer.git
+	url = https://github.com/cornellev/uc-autosteer.git
 [submodule "cev/cev_teleop_ros2"]
 	path = cev/cev_teleop_ros2
-	url = git@github.com:cornellev/cev_teleop_ros2.git
+	url = https://github.com/cornellev/cev_teleop_ros2.git
 [submodule "external/serial-ros2"]
 	path = external/serial-ros2
-	url = git@github.com:RoverRobotics-forks/serial-ros2.git
+	url = https://github.com/RoverRobotics-forks/serial-ros2.git
