@@ -3,7 +3,7 @@ Template repo for our future robot-specific projects.
 
 ## Installation
 `git clone --recurse-submodules https://github.com/cornellev/electric-emu-brain.git`  
-`cd brain_ros2 && sudo ./install.sh`
+`cd electric_emu_ros2 && sudo ./install.sh`
 
 ## Docker
 `docker build -t cev-brain-ros2 .`
