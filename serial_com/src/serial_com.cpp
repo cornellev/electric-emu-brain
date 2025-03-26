@@ -6,6 +6,9 @@
 #include "cev_msgs/msg/sensor_collect.hpp"
 #include <iostream>
 
+#define UART_DEV "/dev/ttyUSB0"
+#define BAUD_RATE B115200
+
 class SerialHandlerNode : public rclcpp::Node {
 public:
     SerialHandlerNode(): Node("serial_handler_node") {
@@ -97,8 +100,9 @@ private:
             try {
                 // Use ostringstream to control the precision of the float values
                 std::ostringstream serial_message;
-                serial_message << std::fixed << std::setprecision(2) << velocity_ << " "
-                               << steering_angle_ << " " << max_velocity_ << "\n";
+                // serial_message << std::fixed << std::setprecision(2) << velocity_ << " "
+                            //    << steering_angle_ << " " << max_velocity_ << "\n";
+                serial_message << steering_angle_ << "\n";
 
                 // Send the message over the serial port
                 serial_port_.write(serial_message.str());
@@ -144,7 +148,7 @@ private:
         sensor_msg.steering_angle = reported_steering_angle;
 
         sensor_collect_pub_->publish(sensor_msg);  // Publish the message
-        RCLCPP_DEBUG(this->get_logger(),
+        RCLCPP_INFO(this->get_logger(),
             "Published sensor data: Timestamp: %f, Velocity: %f, Steering Angle: %f",
             sensor_msg.timestamp, sensor_msg.velocity, sensor_msg.steering_angle);
     }

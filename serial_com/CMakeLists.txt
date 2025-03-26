@@ -14,11 +14,11 @@ find_package(ackermann_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(cev_msgs REQUIRED)
 
-add_executable(arduino_com src/arduino_com.cpp)
-ament_target_dependencies(arduino_com rclcpp serial ackermann_msgs std_msgs cev_msgs)
+add_executable(serial_com src/serial_com.cpp)
+ament_target_dependencies(serial_com rclcpp serial ackermann_msgs std_msgs cev_msgs)
 
 install(TARGETS
-  arduino_com
+  serial_com
   DESTINATION lib/${PROJECT_NAME}
 )
 

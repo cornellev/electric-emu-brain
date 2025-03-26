@@ -12,8 +12,8 @@ def generate_launch_description():
         [
             Node(
                 package="serial_com",
-                executable="arduino_com",
-                name="arduino_com",
+                executable="serial_com",
+                name="serial_com",
             )
         ]
     )
