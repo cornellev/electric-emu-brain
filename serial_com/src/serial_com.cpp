@@ -14,9 +14,9 @@ public:
     SerialHandlerNode(): Node("serial_handler_node") {
         // Initialize serial port
         try {
-            serial_port_.setPort("/dev/ttyUSB0");
+            serial_port_.setPort(UART_DEV);
             serial_port_.setBaudrate(115200);
-            serial::Timeout timeout = serial::Timeout::simpleTimeout(1000);
+            serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
             serial_port_.setTimeout(timeout);
             serial_port_.open();
 
@@ -39,7 +39,7 @@ public:
             1);
 
         // Timer for reading serial data periodically
-        comm_timer_ = this->create_wall_timer(std::chrono::milliseconds(20),
+        comm_timer_ = this->create_wall_timer(std::chrono::milliseconds(50),
             std::bind(&SerialHandlerNode::commSerialData, this));
     }
 
@@ -49,8 +49,8 @@ private:
 
     // Data to publish to arduino
     float steering_angle_;
-    float velocity_ = 10;
-    float max_velocity_ = 20;
+    float velocity_ = 0;
+    float max_velocity_ = 1;
 
     // Parsed serial data from arduino
     int32_t reported_timestamp;
@@ -65,53 +65,42 @@ private:
     // Callback for the rc_movement_msg topic
     void rcMovementCallback(const ackermann_msgs::msg::AckermannDrive::SharedPtr msg) {
         steering_angle_ = msg->steering_angle;
+        velocity_ = msg->speed;
     }
 
     // Read and write serial data periodically
     void commSerialData() {
+        RCLCPP_INFO(this->get_logger(), "Entering...");
         if (serial_port_.isOpen()) {
             try {
-                // Read a line (until newline character)
-                std::string message = serial_port_.readline();
+                // std::vector<uint8_t> buffer(sizeof(float) * 2);
+                // std::memcpy(buffer.data(), &steering_angle_, sizeof(float));
+                // std::memcpy(buffer.data() + sizeof(float), &velocity_, sizeof(float));
 
-                RCLCPP_INFO(this->get_logger(), "Raw message received: '%s'", message.c_str());
-                if (!message.empty()) {
-                    RCLCPP_INFO(this->get_logger(), "Raw message received: '%s'", message.c_str());
+                std::vector<uint8_t> buffer;
+                buffer.push_back(0xAA);  // Start marker
+                buffer.insert(buffer.end(), reinterpret_cast<uint8_t*>(&steering_angle_), reinterpret_cast<uint8_t*>(&steering_angle_) + sizeof(float));
+                buffer.insert(buffer.end(), reinterpret_cast<uint8_t*>(&velocity_), reinterpret_cast<uint8_t*>(&velocity_) + sizeof(float));
+                buffer.push_back(0x55);  // End marker
 
-                    // Parse the received message into reported sensor data
-                    if (parseMessage(message)) {
-                        RCLCPP_INFO(this->get_logger(),
-                            "Parsed values - Int: %d, Float1: %f, Float2: %f", reported_timestamp,
-                            0.0, reported_steering_angle);
-
-                        // Publish the parsed data
-                        publishSensorData();
-                    } else {
-                        RCLCPP_INFO(this->get_logger(), "Failed to parse message: '%s'",
-                            message.c_str());
-                    }
+                if (serial_port_.write(buffer)) {
+                    RCLCPP_INFO(this->get_logger(), "Sent: %f, %f", steering_angle_, velocity_);
                 } else {
-                    RCLCPP_INFO(this->get_logger(), "Message empty.");
+                    RCLCPP_ERROR(this->get_logger(), "Serial write failed");
                 }
-            } catch (const serial::IOException& e) {
-                RCLCPP_INFO(this->get_logger(), "Serial read error: %s", e.what());
-            }
-
-            try {
-                // Use ostringstream to control the precision of the float values
-                std::ostringstream serial_message;
-                // serial_message << std::fixed << std::setprecision(2) << velocity_ << " "
-                            //    << steering_angle_ << " " << max_velocity_ << "\n";
-                serial_message << steering_angle_ << "\n";
-
-                // Send the message over the serial port
-                serial_port_.write(serial_message.str());
-                RCLCPP_INFO(this->get_logger(), "Serial message sent: '%s'",
-                    serial_message.str().c_str());
-
             } catch (const serial::IOException& e) {
                 RCLCPP_ERROR(this->get_logger(), "Serial write error: %s", e.what());
             }
+
+            try {
+                std::string message = serial_port_.readline();
+
+                RCLCPP_INFO(this->get_logger(), "Raw message received: '%s'", message.c_str());
+            } catch (const serial::IOException& e) {
+                RCLCPP_INFO(this->get_logger(), "Serial read error: %s", e.what());
+            }
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Serial port closed.");
         }
     }
 
