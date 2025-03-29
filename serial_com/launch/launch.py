@@ -14,6 +14,7 @@ def generate_launch_description():
                 package="serial_com",
                 executable="serial_com",
                 name="serial_com",
+                parameters=[{"port": "/dev/serial0"}]
             )
         ]
     )

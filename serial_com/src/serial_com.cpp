@@ -6,15 +6,14 @@
 #include "cev_msgs/msg/sensor_collect.hpp"
 #include <iostream>
 
-#define UART_DEV "/dev/ttyUSB0"
-#define BAUD_RATE B115200
-
 class SerialHandlerNode : public rclcpp::Node {
 public:
     SerialHandlerNode(): Node("serial_handler_node") {
+        this->declare_parameter<std::string>("port", "/dev/serial0");
+
         // Initialize serial port
         try {
-            serial_port_.setPort(UART_DEV);
+            serial_port_.setPort(this->get_parameter("port").as_string());
             serial_port_.setBaudrate(115200);
             serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
             serial_port_.setTimeout(timeout);
