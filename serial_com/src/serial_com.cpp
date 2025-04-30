@@ -82,8 +82,22 @@ private:
                 buffer.insert(buffer.end(), reinterpret_cast<uint8_t*>(&velocity_), reinterpret_cast<uint8_t*>(&velocity_) + sizeof(float));
                 buffer.push_back(0x55);  // End marker
 
+		char buffer[64];
+
+		float steer = steering_angle_;
+		float brake = 0;
+		float throttle = 0;
+
+		if (velocity_ > 0) {
+		    throttle = velocity;
+		} else {
+		    brake = velocity;
+		}
+
+		sprintf(buffer, "(%f,%f,%f)", steer, brake, throttle);
+
                 if (serial_port_.write(buffer)) {
-                    RCLCPP_INFO(this->get_logger(), "Sent: %f, %f", steering_angle_, velocity_);
+                    RCLCPP_INFO(this->get_logger(), "Sent: %f, %f, %f", steer, brake, throttle);
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Serial write failed");
                 }
