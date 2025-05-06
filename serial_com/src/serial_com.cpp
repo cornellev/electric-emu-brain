@@ -69,49 +69,40 @@ private:
 
     // Read and write serial data periodically
     void commSerialData() {
-        RCLCPP_INFO(this->get_logger(), "Entering...");
+        // RCLCPP_INFO(this->get_logger(), "Entering...");
         if (serial_port_.isOpen()) {
-            try {
-                // std::vector<uint8_t> buffer(sizeof(float) * 2);
-                // std::memcpy(buffer.data(), &steering_angle_, sizeof(float));
-                // std::memcpy(buffer.data() + sizeof(float), &velocity_, sizeof(float));
+            char buffer[64];
 
-                std::vector<uint8_t> buffer;
-                buffer.push_back(0xAA);  // Start marker
-                buffer.insert(buffer.end(), reinterpret_cast<uint8_t*>(&steering_angle_), reinterpret_cast<uint8_t*>(&steering_angle_) + sizeof(float));
-                buffer.insert(buffer.end(), reinterpret_cast<uint8_t*>(&velocity_), reinterpret_cast<uint8_t*>(&velocity_) + sizeof(float));
-                buffer.push_back(0x55);  // End marker
+            float steer = steering_angle_;
+            float brake = 0;
+            float throttle = 0;
 
-		char buffer[64];
-
-		float steer = steering_angle_;
-		float brake = 0;
-		float throttle = 0;
-
-		if (velocity_ > 0) {
-		    throttle = velocity;
-		} else {
-		    brake = velocity;
-		}
-
-		sprintf(buffer, "(%f,%f,%f)", steer, brake, throttle);
-
-                if (serial_port_.write(buffer)) {
-                    RCLCPP_INFO(this->get_logger(), "Sent: %f, %f, %f", steer, brake, throttle);
-                } else {
-                    RCLCPP_ERROR(this->get_logger(), "Serial write failed");
-                }
-            } catch (const serial::IOException& e) {
-                RCLCPP_ERROR(this->get_logger(), "Serial write error: %s", e.what());
+            if (velocity_ > 0) {
+                throttle = velocity_;
+            } else {
+                brake = -velocity_;
             }
+
+            snprintf(buffer, sizeof(buffer), "(%f,%f,%f)", steer, brake, throttle);
+
+            if (serial_port_.write(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer))) {
+//                RCLCPP_INFO(this->get_logger(), "Sent: (%f,%f,%f)", steer, brake, throttle);
+//                RCLCPP_INFO(this->get_logger(), "%s", buffer);
+            } else {
+                RCLCPP_ERROR(this->get_logger(), "Serial write failed");
+            } 
 
             try {
                 std::string message = serial_port_.readline();
 
-                RCLCPP_INFO(this->get_logger(), "Raw message received: '%s'", message.c_str());
-            } catch (const serial::IOException& e) {
+		if (message.c_str()) {
+                    RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
+                }
+	    } catch (const serial::IOException& e) {
                 RCLCPP_INFO(this->get_logger(), "Serial read error: %s", e.what());
             }
+
+            serial_port_.flushInput();
         } else {
             RCLCPP_INFO(this->get_logger(), "Serial port closed.");
         }
